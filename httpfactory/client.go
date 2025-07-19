@@ -67,3 +67,24 @@ func (c *Client) Post(ctx context.Context, url, contentType string, body []byte,
     return c.do(ctx, http.MethodPost, url, bytes.NewReader(body), headers)
 }
 
+func (c *Client) Put(ctx context.Context, url, contentType string, body []byte, headers map[string]string) (*Response, error) {
+    if headers == nil {
+        headers = map[string]string{}
+    }
+    headers["Content-Type"] = contentType
+    return c.do(ctx, http.MethodPut, url, bytes.NewReader(body), headers)
+}
+// Delete sends a DELETE request.
+func (c *Client) Delete(ctx context.Context, url string, headers map[string]string) (*Response, error) {
+    return c.do(ctx, http.MethodDelete, url, nil, headers)
+}
+
+// Patch sends a PATCH request with content-type header.
+func (c *Client) Patch(ctx context.Context, url, contentType string, body []byte, headers map[string]string) (*Response, error) {
+    if headers == nil {
+        headers = map[string]string{}
+    }
+    headers["Content-Type"] = contentType
+    return c.do(ctx, http.MethodPatch, url, bytes.NewReader(body), headers)
+}
+
