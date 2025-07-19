@@ -4,7 +4,7 @@ Optimized HTTP Client for Go with pluggable middleware and tests.
 
 ## Features
 
-- HTTP methods: GET, POST
+- HTTP methods: GET, POST, PUT,PATCH,DELETE
 - Middleware: Logger, Retry (backoff+jitter), CircuitBreaker, Auth (Bearer/Basic/APIKey/OAuth2), CustomHeaders
 - Build x-www-form-urlencoded bodies
 - Fully modular and testable
