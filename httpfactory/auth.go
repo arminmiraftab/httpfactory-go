@@ -1,3 +1,3 @@
 package httpfactory
 
-// form code omitted
+// auth code omitted
