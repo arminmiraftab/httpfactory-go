@@ -1,4 +1,4 @@
-package httpfactory
+package middleware
 
 import (
     "log"
@@ -8,7 +8,7 @@ import (
     "time"
 )
 
-// RetryConfig controls retry behavior
+// RetryConfig controls retry behavior.
 type RetryConfig struct {
     MaxRetries   int
     BaseDelay    time.Duration
@@ -16,8 +16,8 @@ type RetryConfig struct {
     EnableJitter bool
 }
 
-// RetryMiddleware implements retry with exponential backoff and jitter
-func RetryMiddleware(cfg RetryConfig) Middleware {
+// RetryMiddleware implements retry with exponential backoff and jitter.
+func RetryMiddleware(cfg RetryConfig) func(http.RoundTripper) http.RoundTripper {
     return func(next http.RoundTripper) http.RoundTripper {
         return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
             var resp *http.Response
@@ -31,7 +31,7 @@ func RetryMiddleware(cfg RetryConfig) Middleware {
                     break
                 }
                 delay := calculateBackoff(cfg.BaseDelay, i, cfg.MaxDelay, cfg.EnableJitter)
-                log.Printf("🔁 retry %d %s %s after %v", i+1, req.Method, req.URL, delay)
+                log.Printf("🔁 retry %d after %v", i+1, delay)
                 time.Sleep(delay)
             }
             return resp, err
@@ -39,7 +39,6 @@ func RetryMiddleware(cfg RetryConfig) Middleware {
     }
 }
 
-// calculateBackoff calculates backoff delay with optional jitter
 func calculateBackoff(base time.Duration, attempt int, max time.Duration, jitter bool) time.Duration {
     d := base * time.Duration(math.Pow(2, float64(attempt)))
     if d > max {
@@ -51,3 +50,4 @@ func calculateBackoff(base time.Duration, attempt int, max time.Duration, jitter
     }
     return d
 }
+

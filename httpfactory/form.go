@@ -6,7 +6,7 @@ import (
     "strings"
 )
 
-// BuildFormURLEncodedBody builds x-www-form-urlencoded body
+// BuildFormURLEncodedBody builds x-www-form-urlencoded body.
 func BuildFormURLEncodedBody(data map[string]string) io.Reader {
     form := url.Values{}
     for k, v := range data {
@@ -14,3 +14,4 @@ func BuildFormURLEncodedBody(data map[string]string) io.Reader {
     }
     return strings.NewReader(form.Encode())
 }
+

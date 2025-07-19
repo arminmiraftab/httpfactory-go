@@ -2,7 +2,7 @@ package httpfactory
 
 import "net/http"
 
-// Chain applies middleware in order
+// Chain applies middleware in order.
 func Chain(rt http.RoundTripper, mws ...Middleware) http.RoundTripper {
     if rt == nil {
         rt = http.DefaultTransport
@@ -13,9 +13,10 @@ func Chain(rt http.RoundTripper, mws ...Middleware) http.RoundTripper {
     return rt
 }
 
-// roundTripperFunc adapter
+// roundTripperFunc adapter.
 type roundTripperFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
     return f(req)
 }
+

@@ -1,4 +1,4 @@
-package httpfactory
+package middleware
 
 import (
     "errors"
@@ -7,7 +7,6 @@ import (
     "time"
 )
 
-// CircuitBreakerConfig configures the circuit breaker
 type CircuitBreakerConfig struct {
     FailureThreshold int
     RetryTimeout     time.Duration
@@ -29,13 +28,13 @@ type CircuitBreaker struct {
     mu          sync.Mutex
 }
 
-// NewCircuitBreaker creates a new circuit breaker
+// NewCircuitBreaker creates a new circuit breaker.
 func NewCircuitBreaker(cfg CircuitBreakerConfig) *CircuitBreaker {
-    return &CircuitBreaker{cfg: cfg, state: stateClosed}
+    return &CircuitBreaker{cfg: cfg}
 }
 
-// Middleware returns a middleware that applies the circuit breaker
-func (cb *CircuitBreaker) Middleware() Middleware {
+// Middleware returns the circuit breaker middleware.
+func (cb *CircuitBreaker) Middleware() func(http.RoundTripper) http.RoundTripper {
     return func(next http.RoundTripper) http.RoundTripper {
         return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
             cb.mu.Lock()
@@ -68,3 +67,4 @@ func (cb *CircuitBreaker) Middleware() Middleware {
         })
     }
 }
+

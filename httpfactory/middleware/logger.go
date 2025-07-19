@@ -1,4 +1,4 @@
-package httpfactory
+package middleware
 
 import (
     "log"
@@ -6,8 +6,8 @@ import (
     "time"
 )
 
-// LoggerMiddleware logs requests and responses
-func LoggerMiddleware() Middleware {
+// LoggerMiddleware logs requests and responses.
+func LoggerMiddleware() func(http.RoundTripper) http.RoundTripper {
     return func(next http.RoundTripper) http.RoundTripper {
         return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
             start := time.Now()
@@ -23,14 +23,3 @@ func LoggerMiddleware() Middleware {
     }
 }
 
-// CustomHeadersMiddleware injects headers
-func CustomHeadersMiddleware(headers map[string]string) Middleware {
-    return func(next http.RoundTripper) http.RoundTripper {
-        return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
-            for k, v := range headers {
-                req.Header.Set(k, v)
-            }
-            return next.RoundTrip(req)
-        })
-    }
-}

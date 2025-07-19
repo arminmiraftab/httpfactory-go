@@ -1,26 +1,45 @@
 # httpfactory-go
 
-Enterprise-grade HTTP Client for Go with pluggable Middleware.
+Optimized HTTP Client for Go with pluggable middleware and tests.
 
 ## Features
 
 - HTTP methods: GET, POST
-- Middleware: Logger, Retry, CircuitBreaker, Auth, APIKey, CustomHeaders
-- Auth types: Bearer, Basic, API Key, OAuth2 (auto-refresh), Custom
-- Retry with exponential backoff + jitter
-- Circuit Breaker pattern
+- Middleware: Logger, Retry (backoff+jitter), CircuitBreaker, Auth (Bearer/Basic/APIKey/OAuth2), CustomHeaders
 - Build x-www-form-urlencoded bodies
 - Fully modular and testable
 
 ## Usage
 
 ```go
-client := httpfactory.New(
-    10*time.Second,
-    httpfactory.AuthMiddlewareFactory(httpfactory.AuthConfig{
-        Type:          httpfactory.AuthBearer,
-        Token:         "token123",
-    }),
-    httpfactory.LoggerMiddleware(),
+import (
+    "context"
+    "time"
+
+    "github.com/arminmiraftab/httpfactory-go/httpfactory"
+    "github.com/arminmiraftab/httpfactory-go/httpfactory/middleware"
 )
+
+func main() {
+    client := httpfactory.NewClient(10*time.Second,
+        middleware.AuthMiddlewareFactory(middleware.AuthConfig{
+            Type:  middleware.AuthBearer,
+            Token: "token123",
+        }),
+        middleware.LoggerMiddleware(),
+        middleware.RetryMiddleware(middleware.RetryConfig{
+            MaxRetries:   3,
+            BaseDelay:    100 * time.Millisecond,
+            MaxDelay:     1 * time.Second,
+            EnableJitter: true,
+        }),
+    )
+
+    resp, err := client.Get(context.Background(), "https://httpbin.org/get", nil)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Status:", resp.StatusCode)
+    fmt.Println("Body:", string(resp.Body))
+}
 ```

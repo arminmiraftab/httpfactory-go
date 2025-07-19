@@ -2,72 +2,68 @@ package httpfactory
 
 import (
     "bytes"
+    "context"
     "io"
     "net/http"
     "time"
 )
 
-// HTTPClient encapsulates http.Client with pluggable middleware
-type HTTPClient struct {
-    client *http.Client
+// Client is the HTTP client with middleware support.
+type Client struct {
+    http.Client
 }
 
-// Middleware defines a RoundTripper decorator
+// Middleware defines a RoundTripper decorator.
 type Middleware func(next http.RoundTripper) http.RoundTripper
 
-// New creates a HTTPClient with given timeout and middleware chain
-func New(timeout time.Duration, mws ...Middleware) *HTTPClient {
-    transport := http.DefaultTransport
-    for _, mw := range mws {
-        transport = mw(transport)
-    }
-    return &HTTPClient{
-        client: &http.Client{
-            Timeout:   timeout,
-            Transport: transport,
-        },
-    }
+// NewClient creates a new Client with the given timeout and middleware chain.
+func NewClient(timeout time.Duration, mws ...Middleware) *Client {
+    transport := Chain(http.DefaultTransport, mws...)
+    return &Client{Client: http.Client{
+        Timeout:   timeout,
+        Transport: transport,
+    }}
 }
 
-// ResponseWithHeaders holds full response data
-type ResponseWithHeaders struct {
+// Response wraps the http.Response data.
+type Response struct {
     StatusCode int
     Headers    http.Header
     Body       []byte
 }
 
-// sendRequest does the actual HTTP request
-func (hc *HTTPClient) sendRequest(method, url string, body io.Reader, headers map[string]string) (*ResponseWithHeaders, error) {
-    req, err := http.NewRequest(method, url, body)
+// do executes an HTTP request with context, body reader and headers.
+func (c *Client) do(ctx context.Context, method, url string, body io.Reader, headers map[string]string) (*Response, error) {
+    req, err := http.NewRequestWithContext(ctx, method, url, body)
     if err != nil {
         return nil, err
     }
     for k, v := range headers {
         req.Header.Set(k, v)
     }
-    resp, err := hc.client.Do(req)
+    resp, err := c.Do(req)
     if err != nil {
         return nil, err
     }
     defer resp.Body.Close()
-    respBody, err := io.ReadAll(resp.Body)
+    data, err := io.ReadAll(resp.Body)
     if err != nil {
         return nil, err
     }
-    return &ResponseWithHeaders{StatusCode: resp.StatusCode, Headers: resp.Header, Body: respBody}, nil
+    return &Response{resp.StatusCode, resp.Header, data}, nil
 }
 
-// Get convenience method
-func (hc *HTTPClient) Get(url string, headers map[string]string) (*ResponseWithHeaders, error) {
-    return hc.sendRequest(http.MethodGet, url, nil, headers)
+// Get sends a GET request.
+func (c *Client) Get(ctx context.Context, url string, headers map[string]string) (*Response, error) {
+    return c.do(ctx, http.MethodGet, url, nil, headers)
 }
 
-// Post convenience method
-func (hc *HTTPClient) Post(url, contentType string, body []byte, headers map[string]string) (*ResponseWithHeaders, error) {
-    h := headers
-    if h == nil {
-        h = map[string]string{}
+// Post sends a POST request with content-type header.
+func (c *Client) Post(ctx context.Context, url, contentType string, body []byte, headers map[string]string) (*Response, error) {
+    if headers == nil {
+        headers = map[string]string{}
     }
-    h["Content-Type"] = contentType
-    return hc.sendRequest(http.MethodPost, url, bytes.NewReader(body), h)
+    headers["Content-Type"] = contentType
+    return c.do(ctx, http.MethodPost, url, bytes.NewReader(body), headers)
 }
+
